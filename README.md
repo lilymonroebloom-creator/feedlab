@@ -72,13 +72,13 @@ Le **caviardage** (`feedlab/redact.py`) masque uniquement trois choses : `proc_t
 | Risque | Tests qui l'attrapent |
 |---|---|
 | Prix faux | C `test_valid_price_is_reproduced_exactly` ; E `test_sample_matches_expected_output` ; unitaire `test_price_string_is_kept_exactly` ; D (toute différence de prix) |
-| Message abîmé | B `corrupt_*`, `truncate_last` ; C `test_parser_never_raises`, `test_malformed_message_is_rejected_never_quoted` ; unitaires `test_parser.py` |
+| Message abîmé | B `corrupt_*`, `truncate_last` ; C `test_parser_never_raises`, `test_malformed_message_is_rejected_never_quoted` ; unitaires `tests/unit/test_parser.py` |
 | Message perdu | A `test_no_message_is_lost` ; B `drop` ; unitaire `test_gap_is_reported_then_message_accepted` |
 | Message en retard | B `delay`, `reorder_same_symbol` ; unitaires `test_late_message_is_skipped_and_never_overwrites`, `test_delayed_99_after_101_gives_gap_then_skip` ; C `test_book_never_goes_back_in_time` |
 | Message dupliqué | B `duplicate` ; unitaire `test_duplicate` ; E (ligne DUPLICATE du corrigé) |
 | Carnet croisé | B `cross` ; C `test_every_quote_has_bid_below_ask` ; unitaire `test_crossed_book` ; D `test_monkeypatched_rule_is_detected` |
 | Faux GAP après un rejet | unitaire `test_rejected_message_consumes_its_sequence_number` ; B `corrupt_price_abc` (delta sans GAP) ; Robot « Un prix illisible est rejeté sans créer de faux gap » |
-| Sortie non conforme | E `test_sample_matches_expected_output` + `scripts/compare.sh` ; unitaires `test_redact.py` |
+| Sortie non conforme | E `test_sample_matches_expected_output` + `scripts/compare.sh` ; unitaires `tests/unit/test_redact.py` |
 | Régression entre versions | D `tools/differential.py`, `test_cli_detects_a_patched_candidate` |
 | Régression de latence | perf `test_latency_not_regressed_against_baseline` ; détecteur `test_injected_delay_is_detected` |
 
@@ -221,7 +221,7 @@ Codes retour : `tools/differential.py` et `scripts/compare.sh` renvoient 0 si le
 - **Parser strict.** Les nombres doivent être des chaînes au format décimal canonique : `1e5`, `01.5`, `+1`, `NaN` et les nombres JSON (qui passeraient par un float) sont rejetés. Une quantité 0 est acceptée.
 - **Latence mesurée en Python, dans un seul processus**, sans réseau ni noyau : ce sont des microsecondes Python, pas celles d'un handler C++ en kernel bypass.
 - **Bruit de la VM.** Sur la machine virtuelle de développement, le p99 en temps réel varie de +16 % à +115 % d'une série à l'autre sans aucun changement de code (préemption par l'hyperviseur). Le scénario `realtime` bloque donc sur le **p50**, qui reste stable ; son p99 est affiché pour information. Le scénario `burst` bloque bien sur le p99.
-- **Opérateurs de mutation.** Ils ne visent qu'un message dans un « voisinage propre » (message en séquence, suivants contigus et valides), pour que le delta reste une formule exacte. `truncate_last` refuse une session dont la dernière ligne n'est pas une cotation en séquence. Le contrôle de validité de `mutate.py` reprend volontairement, en plus simple, les règles du parser.
+- **Opérateurs de mutation.** Ils ne visent qu'un message dans un « voisinage propre » (message en séquence, suivants contigus et valides), pour que le delta reste une formule exacte. `truncate_last` refuse une session dont la dernière ligne n'est pas une cotation en séquence. Le contrôle de validité de `testdata/mutate.py` reprend volontairement, en plus simple, les règles du parser.
 - **Hypothesis en mode `derandomize=True`.** Les mêmes exemples reviennent à chaque exécution, ce qui garantit la reproductibilité mais explore moins qu'un mode aléatoire.
 - **Différentiel.** La version de référence doit déjà contenir la commande `python -m feedlab.dump` (c'est le cas depuis le premier commit). Les sessions rejouées sont celles de l'arbre courant.
 - **Robot ne lit aucun fichier de configuration.** L'exclusion de la latence par défaut passe donc par un `Skip If`.
