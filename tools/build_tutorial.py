@@ -152,7 +152,12 @@ def collect_readme() -> dict:
         return hits[0]
 
     def table(body):
-        rows = [l for l in body.splitlines() if l.startswith("|")]
+        rows = []
+        for l in body.splitlines():
+            if l.startswith("|"):
+                rows.append(l)
+            elif rows:
+                break  # first contiguous table only
         need(len(rows) >= 3, "README.md: table not found")
         split = lambda l: [c.strip() for c in l.strip().strip("|").split("|")]  # noqa: E731
         return split(rows[0]), [split(l) for l in rows[2:]]
@@ -205,14 +210,15 @@ def per_line_events(lines: list[str]) -> list[list[str]]:
     return out
 
 
-def compact(line: str, ts: bool = False) -> str:
+def compact(line: str, ts: bool = False, full: bool = True) -> str:
     try:
         obj = json.loads(line)
         d = obj["raw"]["data"]
     except Exception:
         return "⟨JSON invalide⟩ " + (line if len(line) < 60 else "…" + line[-55:])
     g = lambda k: d.get(k, "∅") if isinstance(d, dict) else "∅"  # noqa: E731
-    s = f"{g('s')} u={g('u')} b={g('b')} B={g('B')} a={g('a')} A={g('A')}"
+    s = (f"{g('s')} u={g('u')} b={g('b')} B={g('B')} a={g('a')} A={g('A')}" if full
+         else f"{g('s')} u={g('u')} b={g('b')} a={g('a')}")
     return (f"recv_ts_ns={obj.get('recv_ts_ns')}  " + s) if ts else s
 
 
@@ -240,8 +246,8 @@ def collect_mutations(calm: list[str]) -> list[dict]:
         ts = op == "burst"
         out.append({
             "op": op, "description": m.description, "delta": m.delta, "target": t,
-            "before": [(i + 1, compact(calm[i], ts), ev_clean[i], i == t) for i in idx_b],
-            "after": [(i + 1, compact(new[i], ts), ev_new[i], i in m.touched) for i in idx_a],
+            "before": [(i + 1, compact(calm[i], ts, i == t), ev_clean[i], i == t) for i in idx_b],
+            "after": [(i + 1, compact(new[i], ts, i in m.touched), ev_new[i], i in m.touched) for i in idx_a],
         })
     return out
 
@@ -286,8 +292,8 @@ def sim_line(token: str) -> str:
         data["u"] = u
     else:
         u = 0
-    data.update({"b": "abc" if token.endswith("x") else f"67000.{u % 100:02d}", "B": "1",
-                 "a": f"67001.{u % 100:02d}", "A": "1"})
+    data.update({"b": "abc" if token.endswith("x") else f"{67000 + u}.00", "B": "1",
+                 "a": f"{67000 + u}.50", "A": "1"})
     return json.dumps({"recv_ts_ns": 1700000030000000000, "raw": {"stream": "btcusdt@bookTicker", "data": data}})
 
 
@@ -454,21 +460,26 @@ def svg_pipeline(vertical: bool) -> str:
                 parts.append(f'<path class="pipe-arrow" d="M{w / 2} {y + bh + 3} V{y + bh + gap - 5}" marker-end="url(#arrow-v)"/>')
         parts.append('<defs><marker id="arrow-v" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="pipe-head"/></marker></defs></svg>')
         return "".join(parts)
-    bw, gap, bh = 150, 34, 64
-    w = n * bw + (n - 1) * gap + 4
-    parts = [f'<svg class="pipe pipe-h" viewBox="0 0 {w} {bh + 8}" role="group" aria-label="Chaîne de traitement">']
+    bw, gap, bh, vgap, per_row = 200, 46, 64, 58, 4
+    w = per_row * bw + (per_row - 1) * gap + 4
+    h = 2 * bh + vgap + 8
+    parts = [f'<svg class="pipe pipe-h" viewBox="0 0 {w} {h}" role="group" aria-label="Chaîne de traitement">']
+    pos = []
     for i, (sid, label, _, _) in enumerate(steps):
-        x = 2 + i * (bw + gap)
-        words = label.split(" ")
-        if len(words) > 1:
-            txt = (f'<text x="{x + bw / 2}" y="{bh / 2 - 2}" text-anchor="middle">{e(words[0])}</text>'
-                   f'<text x="{x + bw / 2}" y="{bh / 2 + 18}" text-anchor="middle">{e(" ".join(words[1:]))}</text>')
-        else:
-            txt = f'<text x="{x + bw / 2}" y="{bh / 2 + 10}" text-anchor="middle">{e(label)}</text>'
+        row, col = divmod(i, per_row)
+        x, y = 2 + col * (bw + gap), 4 + row * (bh + vgap)
+        pos.append((x, y))
         parts.append(f'<g class="pipe-node" role="button" tabindex="0" data-step="{sid}" aria-controls="pipe-detail" aria-label="{e(label)} : ouvrir l\'explication">'
-                     f'<rect x="{x}" y="4" width="{bw}" height="{bh}" rx="12"/>{txt}</g>')
-        if i < n - 1:
-            parts.append(f'<path class="pipe-arrow" d="M{x + bw + 3} {bh / 2 + 4} H{x + bw + gap - 6}" marker-end="url(#arrow-h)"/>')
+                     f'<rect x="{x}" y="{y}" width="{bw}" height="{bh}" rx="12"/>'
+                     f'<text x="{x + bw / 2}" y="{y + bh / 2 + 6}" text-anchor="middle">{e(label)}</text></g>')
+    for i in range(n - 1):
+        (x1, y1), (x2, y2) = pos[i], pos[i + 1]
+        if y1 == y2:
+            d = f"M{x1 + bw + 3} {y1 + bh / 2} H{x2 - 6}"
+        else:  # from the end of row 1 down to the start of row 2
+            mid = y1 + bh + vgap / 2
+            d = f"M{x1 + bw / 2} {y1 + bh + 3} V{mid} H{x2 + bw / 2} V{y2 - 6}"
+        parts.append(f'<path class="pipe-arrow" d="{d}" marker-end="url(#arrow-h)"/>')
     parts.append('<defs><marker id="arrow-h" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="pipe-head"/></marker></defs></svg>')
     return "".join(parts)
 
@@ -481,7 +492,6 @@ def sec_projet(R) -> str:
         check_token(path)
     noscript = "".join(f"<li><strong>{e(l)}</strong> (<code>{e(p)}</code>) : {md(t)}</li>" for _, l, p, t in C.PIPELINE)
     return f"""
-<p>{md(R['readme']['summary'])}</p>
 <p>Le schéma ci-dessous montre la chaîne complète. <strong>Cliquez sur un bloc</strong> (ou utilisez Tab puis Entrée) pour ouvrir son explication.</p>
 <figure class="pipeline">{svg_pipeline(False)}{svg_pipeline(True)}
 <figcaption>enregistrement → rejeu → parser → carnet → sortie abonné → caviardage → comparaison</figcaption></figure>
@@ -660,9 +670,9 @@ def sec_methodes(R) -> str:
 
 def mut_rows(rows) -> str:
     body = "".join(
-        f'<tr class="{"hl" if hl else ""}"><td class="num">{n}</td><td class="mono">{e(txt)}</td><td>{e(" + ".join(ev))}</td></tr>'
+        f'<tr class="{"hl" if hl else ""}"><td class="num">{n}</td><td><strong>{e(" + ".join(ev))}</strong></td><td class="mono">{e(txt)}</td></tr>'
         for n, txt, ev, hl in rows)
-    return f'<div class="table-wrap" tabindex="0"><table class="mut"><thead><tr><th scope="col">Ligne</th><th scope="col">Message</th><th scope="col">Événements</th></tr></thead><tbody>{body}</tbody></table></div>'
+    return f'<div class="table-wrap" tabindex="0"><table class="mut"><thead><tr><th scope="col">Ligne</th><th scope="col">Événements</th><th scope="col">Message</th></tr></thead><tbody>{body}</tbody></table></div>'
 
 
 def sec_mutations(R) -> str:
@@ -673,7 +683,7 @@ def sec_mutations(R) -> str:
     cards = []
     for m in R["mutations"]:
         cards.append(f"""<article class="mut-card" id="mut-{m['op']}"><h3><code>{e(m['op'])}</code></h3>
-<p>{md(m['description'])}</p><p class="delta">Écart attendu : {delta_chips(m['delta'])}</p>
+<p><span class="muted small">Description renvoyée par l'opérateur :</span> <code>{e(m['description'])}</code></p><p class="delta">Écart attendu : {delta_chips(m['delta'])}</p>
 <div class="two-col"><div><p class="sim-label">Avant (session calme)</p>{mut_rows(m['before'])}</div>
 <div><p class="sim-label">Après mutation (graine 1)</p>{mut_rows(m['after'])}</div></div></article>""")
     return f"""
@@ -692,7 +702,7 @@ def svg_latency(L, thr) -> str:
     keys = [("p50", "p50"), ("p99", "p99"), ("p99_9", "p99.9")]
     vmax = max(max(s[k] for k, _ in keys) for s in sc.values())
     vmax = max(vmax, max(max(s["runs_p99"]) for s in sc.values()))
-    W, left, right, bar, gap = 640, 70, 120, 22, 10
+    W, left, right, bar, gap = 640, 70, 130, 22, 12
     plot = W - left - right
     x = lambda v: left + v / vmax * plot  # noqa: E731
     out = []
@@ -709,10 +719,12 @@ def svg_latency(L, thr) -> str:
         for i, (k, lab) in enumerate(keys):
             y = 6 + i * (bar + gap)
             val = s[k]
+            ends = [val] + (list(s["runs_p99"]) if k == "p99" else []) + ([val * (1 + thr)] if k == s["gating_metric"] else [])
+            label_x = x(max(ends)) + 12
             g.append(f'<text class="axis" x="{left - 10}" y="{y + bar / 2 + 5}" text-anchor="end">{lab}</text>'
                      f'<g class="bar" tabindex="0" role="img" aria-label="{lab} = {val} ns"><title>{lab} = {val} ns</title>'
                      f'<path d="M{left} {y} H{x(val) - 4:.1f} a4 4 0 0 1 4 4 V{y + bar - 4} a4 4 0 0 1 -4 4 H{left} Z"/></g>'
-                     f'<text class="val" x="{x(val) + 8:.1f}" y="{y + bar / 2 + 5}">{val:,} ns</text>'.replace(",", " "))
+                     f'<text class="val" x="{label_x:.1f}" y="{y + bar / 2 + 5}">{val:,} ns</text>'.replace(",", " "))
             if k == "p99":
                 for rv in s["runs_p99"]:
                     g.append(f'<circle class="run" cx="{x(rv):.1f}" cy="{y + bar / 2}" r="4.5"><title>p99 d\'une exécution : {rv} ns</title></circle>')
@@ -1046,6 +1058,7 @@ h2:hover .anchor,.anchor:focus{opacity:1}
 .table-wrap{overflow-x:auto;margin:1em 0;border:1px solid var(--border);border-radius:10px}
 table{border-collapse:collapse;width:100%;font-size:.9rem}
 th,td{text-align:left;vertical-align:top;padding:.55em .8em;border-bottom:1px solid var(--border)}
+td code,th code{overflow-wrap:normal}
 th{background:var(--surface);font-weight:650;white-space:nowrap}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--surface) 55%,var(--bg))}
@@ -1116,7 +1129,7 @@ ul.tests{columns:2;column-gap:24px;padding-left:1.1em;margin:.3em 0}ul.tests li{
 .limits li{margin:.5em 0}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:.5em 1em;border-radius:8px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:90}
 .toast.show{opacity:1}
-.qa-controls{position:sticky;top:var(--top-h);z-index:20;background:var(--bg);padding:.6em 0;border-bottom:1px solid var(--border);margin-bottom:.8em}
+.qa-controls{padding:.6em 0;border-bottom:1px solid var(--border);margin-bottom:.8em}
 .filters{display:flex;flex-wrap:wrap;gap:6px}
 .train-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:.6em}
 .score{font-size:.88rem;font-variant-numeric:tabular-nums}
@@ -1156,6 +1169,9 @@ ul.tests{columns:2;column-gap:24px;padding-left:1.1em;margin:.3em 0}ul.tests li{
   :root{--fs:17px;--top-h:104px}
   .topbar{flex-wrap:wrap;height:auto;min-height:var(--top-h);padding:8px 16px;row-gap:6px}
   .search{order:3;flex-basis:100%;max-width:none}
+  .actions .btn:not(#theme-toggle){display:none}
+  .actions{margin-left:auto}
+  .brand span{display:none}
   .pipe-h{display:none}.pipe-v{display:block}
   .two-col{grid-template-columns:1fr}
   ul.tests{columns:1}
@@ -1272,7 +1288,7 @@ function simulate(tokens){
       if (last !== undefined && u > last + 1) { c.gaps++; ev.push('GAP sym=BTCUSDT expected=' + (last + 1) + ' received=' + u); }
       last = u;
       if (bad) { c.rejects++; ev.push('REJECT sym=BTCUSDT u=' + u + ' reason=not_numeric:b'); }
-      else { c.quotes++; ev.push('QUOTE sym=BTCUSDT u=' + u + ' bid=67000.' + pad2(u % 100) + ' bid_qty=1 ask=67001.' + pad2(u % 100) + ' ask_qty=1'); }
+      else { c.quotes++; ev.push('QUOTE sym=BTCUSDT u=' + u + ' bid=' + (67000 + u) + '.00 bid_qty=1 ask=' + (67000 + u) + '.50 ask_qty=1'); }
     }
     rows.push(ev);
   });
