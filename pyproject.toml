@@ -21,6 +21,3 @@ markers = [
     "method_e: golden files",
     "unit: classic unit tests",
 ]
-
-[tool.robot]
-exclude = ["perf"]
