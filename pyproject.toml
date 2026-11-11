@@ -1,0 +1,26 @@
+[project]
+name = "feedlab"
+version = "0.1.0"
+description = "Small market data feed handler and its test strategy"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest", "hypothesis", "robotframework"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not perf' -p no:cacheprovider"
+markers = [
+    "perf: latency measurements, machine dependent (excluded by default)",
+    "git: needs the git repository (differential tests)",
+    "method_a: replay of recordings",
+    "method_b: metamorphic tests by mutation",
+    "method_c: property-based tests",
+    "method_d: differential tests between versions",
+    "method_e: golden files",
+    "unit: classic unit tests",
+]
+
+[tool.robot]
+exclude = ["perf"]
