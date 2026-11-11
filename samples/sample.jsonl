@@ -1,0 +1,12 @@
+{"recv_ts_ns":1700000030000000000,"raw":{"stream":"btcusdt@bookTicker","data":{"u":101,"s":"BTCUSDT","b":"67000.10","B":"0.5","a":"67000.20","A":"1.2"}}}
+{"recv_ts_ns":1700000030000100000,"raw":{"stream":"ethusdt@bookTicker","data":{"u":500,"s":"ETHUSDT","b":"3500.00","B":"2.0000","a":"3500.01","A":"1.5000"}}}
+{"recv_ts_ns":1700000030000200000,"raw":{"stream":"btcusdt@bookTicker","data":{"u":102,"s":"BTCUSDT","b":"67000.15","B":"0.75","a":"67000.20","A":"1.0"}}}
+{"recv_ts_ns":1700000030000300000,"raw":{"stream":"btcusdt@bookTicker","data":{"u":102,"s":"BTCUSDT","b":"67000.15","B":"0.75","a":"67000.20","A":"1.0"}}}
+{"recv_ts_ns":1700000030000400000,"raw":{"stream":"btcusdt@bookTicker","data":{"u":104,"s":"BTCUSDT","b":"67000.30","B":"0.4","a":"67000.40","A":"0.9"}}}
+{"recv_ts_ns":1700000030000500000,"raw":{"stream":"btcusdt@bookTicker","data":{"u":103,"s":"BTCUSDT","b":"67000.20","B":"0.6","a":"67000.30","A":"0.8"}}}
+{"recv_ts_ns":1700000030000600000,"raw":{"stream":"ethusdt@bookTicker","data":{"u":501,"s":"ETHUSDT","b":"abc","B":"1.0000","a":"3500.02","A":"0.5000"}}}
+{"recv_ts_ns":1700000030000700000,"raw":{"stream":"ethusdt@bookTicker","data":{"u":502,"s":"ETHUSDT","b":"3500.02","B":"1.0000","a":"3500.03","A":"0.5000"}}}
+{"recv_ts_ns":1700000030000800000,"raw":{"stream":"btcusdt@bookTicker","data":{"u":105,"s":"BTCUSDT","b":"67000.40","B":"0.2","a":"67000.40","A":"0.3"}}}
+{"recv_ts_ns":1700000030000900000,"raw":{"stream":"ethusdt@bookTicker","data":{"u":503,"s":"ETHUSDT","b":"3500.03","B":"1.0000","a":"3500.04"}}}
+{"recv_ts_ns":1700000030001000000,"raw":{"stream":"dogeusdt@bookTicker","data":{"u":9000,"s":"DOGEUSDT","b":"0.161230","B":"1500","a":"0.161240","A":"0"}}}
+{"recv_ts_ns":1700000030001100000,"raw":{"stream":"btcusdt@bookTicker","data":{"u":107,"s":"BTCU

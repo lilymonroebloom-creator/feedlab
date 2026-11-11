@@ -1,0 +1,13 @@
+QUOTE sym=BTCUSDT u=101 bid=67000.10 bid_qty=0.5 ask=67000.20 ask_qty=1.2 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+QUOTE sym=ETHUSDT u=500 bid=3500.00 bid_qty=2.0000 ask=3500.01 ask_qty=1.5000 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+QUOTE sym=BTCUSDT u=102 bid=67000.15 bid_qty=0.75 ask=67000.20 ask_qty=1.0 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+DUPLICATE sym=BTCUSDT u=102 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+GAP sym=BTCUSDT expected=103 received=104 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+QUOTE sym=BTCUSDT u=104 bid=67000.30 bid_qty=0.4 ask=67000.40 ask_qty=0.9 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+SKIP sym=BTCUSDT u=103 last=104 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+REJECT sym=ETHUSDT u=501 reason=not_numeric:b proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+QUOTE sym=ETHUSDT u=502 bid=3500.02 bid_qty=1.0000 ask=3500.03 ask_qty=0.5000 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+REJECT sym=BTCUSDT u=105 reason=crossed_book proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+REJECT sym=ETHUSDT u=503 reason=missing_field:A proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+QUOTE sym=DOGEUSDT u=9000 bid=0.161230 bid_qty=1500 ask=0.161240 ask_qty=0 proc_ts=<TS> host=<HOST> latency_ns=<LAT>
+REJECT sym=- u=- reason=invalid_json proc_ts=<TS> host=<HOST> latency_ns=<LAT>
