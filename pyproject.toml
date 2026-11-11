@@ -20,4 +20,5 @@ markers = [
     "method_d: differential tests between versions",
     "method_e: golden files",
     "unit: classic unit tests",
+    "testdata: checks of the generator and of every mutation delta",
 ]

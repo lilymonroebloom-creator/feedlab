@@ -14,11 +14,13 @@ from feedlab.replay import read_lines, run_session  # noqa: E402
 RECORDINGS = sorted((ROOT / "recordings").glob("session_*.jsonl"))
 
 
+@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
     """Tag every test with its method marker from the file name (used for counting)."""
     by_file = {
         "test_a_": "method_a", "test_b_": "method_b", "test_c_": "method_c",
         "test_d_": "method_d", "test_e_": "method_e",
+        "test_generator": "testdata", "test_mutate_deltas": "testdata",
     }
     for item in items:
         name = Path(str(item.fspath)).name
