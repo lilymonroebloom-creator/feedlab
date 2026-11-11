@@ -1,0 +1,52 @@
+{
+  "created_with": "python -m feedlab.latency --update-baseline",
+  "unit": "ns",
+  "metric": "p99 for burst; p50 for realtime (p99 too noisy on a VM, see README)",
+  "default_threshold": 0.1,
+  "runs": 5,
+  "statistic": "median of the runs, per percentile (nearest rank)",
+  "python": "3.11.2",
+  "machine": "aarch64",
+  "scenarios": {
+    "burst": {
+      "session": "recordings/session_volatile.jsonl",
+      "speed": 0.0,
+      "messages": 20000,
+      "description": "rejeu en rafale (--speed 0) de la session volatile compl\u00e8te",
+      "gating_metric": "p99",
+      "p50": 4125,
+      "p99": 5458,
+      "p99_9": 12542,
+      "max": 66000,
+      "mean": 4198,
+      "count": 20000,
+      "runs_p99": [
+        6542,
+        5167,
+        8125,
+        5458,
+        5334
+      ]
+    },
+    "realtime": {
+      "session": "recordings/session_calm.jsonl",
+      "speed": 1.0,
+      "messages": 1000,
+      "description": "rejeu \u00e0 vitesse r\u00e9elle des 1000 premiers messages de la session calme",
+      "gating_metric": "p50",
+      "p50": 4583,
+      "p99": 17249,
+      "p99_9": 36417,
+      "max": 36417,
+      "mean": 5210,
+      "count": 1000,
+      "runs_p99": [
+        13375,
+        17249,
+        16666,
+        18792,
+        17416
+      ]
+    }
+  }
+}

@@ -38,7 +38,10 @@ def replay(
     speed: float = 0.0,
     sleep: Callable[[float], None] = time.sleep,
     now_ns: Callable[[], int] = time.perf_counter_ns,
+    spin: bool = False,
 ) -> FeedHandler:
+    """``spin=True`` busy-waits instead of sleeping (keeps the core hot, like a
+    low-latency handler that busy-polls its socket). Used for latency measurements."""
     if speed < 0:
         raise ValueError("speed must be >= 0")
     first_ts: int | None = None
@@ -51,9 +54,13 @@ def replay(
                     first_ts = ts
                     start_ns = now_ns()
                 target = start_ns + (ts - first_ts) / speed
-                wait = target - now_ns()
-                if wait > 0:
-                    sleep(wait / 1e9)
+                if spin:
+                    while now_ns() < target:
+                        pass
+                else:
+                    wait = target - now_ns()
+                    if wait > 0:
+                        sleep(wait / 1e9)
         handler.on_message(line)
     return handler
 
